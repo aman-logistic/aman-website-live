@@ -520,6 +520,21 @@ body,button,input,select,textarea{font-family:var(--site-font)}
 @keyframes lift{
   from{transform:translate(-50%, calc(var(--resting-offset) + 86vh))}
 }
+</style><style>
+@media (max-width: 760px) {
+  .aman-opening { height: clamp(226px, 75vw, 320px); }
+  .aman-opening .picture {
+    width: min(130cqw, 175cqh, 630px);
+    translate: 0 var(--mobile-box-outro, 0px);
+  }
+}
+@media (max-width: 760px) and (prefers-reduced-motion: no-preference) {
+  .aman-opening.playing .picture { animation-duration: .68s; }
+  .aman-opening.playing .name { animation-duration: .16s; animation-delay: .61s; }
+  .aman-opening.playing .outline { animation-duration: .32s; animation-delay: .72s; }
+  .aman-opening.playing .aman-tagline { animation-duration: .17s; animation-delay: .98s; }
+  .aman-opening.playing .photo-finish { animation-duration: .14s; animation-delay: 1.06s; }
+}
 </style></head>
  <body>
   <header class="site-header" id="top">
@@ -1368,6 +1383,7 @@ let scrollFrame = 0;
 function syncIntroWithScroll() {
   scrollFrame = 0;
   if (reducedMotion.matches) {
+    introStage.style.removeProperty('--mobile-box-outro');
     introStage.style.removeProperty('--mobile-logo-shift');
     introStage.style.removeProperty('--mobile-logo-scale');
     introStage.style.removeProperty('--mobile-tagline-opacity');
@@ -1378,7 +1394,10 @@ function syncIntroWithScroll() {
   const reverseScroll = Math.max(0, scrollDistance - holdDistance);
 
   if (compactIntro.matches) {
-    const progress = Math.min(1, reverseScroll / Math.max(1, introStage.clientHeight * .65 - holdDistance));
+    const progress = Math.min(1, reverseScroll / Math.max(1, introStage.clientHeight - holdDistance));
+    // Lower the artwork as a single layer while the section scrolls away.
+    const drop = introStage.clientHeight * .42 * progress ** 2;
+    introStage.style.setProperty('--mobile-box-outro', `${drop}px`);
     introStage.style.setProperty('--mobile-logo-shift', `-${progress * 14}px`);
     introStage.style.setProperty('--mobile-logo-scale', String(1 - progress * .15));
     introStage.style.setProperty('--mobile-tagline-opacity', String(1 - progress * .5));
