@@ -525,7 +525,6 @@ body,button,input,select,textarea{font-family:var(--site-font)}
   .aman-opening { height: clamp(226px, 75vw, 320px); }
   .aman-opening .picture {
     width: min(130cqw, 175cqh, 630px);
-    translate: 0 var(--mobile-box-outro, 0px);
   }
 }
 @media (max-width: 760px) and (prefers-reduced-motion: no-preference) {
@@ -534,6 +533,9 @@ body,button,input,select,textarea{font-family:var(--site-font)}
   .aman-opening.playing .outline { animation-duration: .32s; animation-delay: .72s; }
   .aman-opening.playing .aman-tagline { animation-duration: .17s; animation-delay: .98s; }
   .aman-opening.playing .photo-finish { animation-duration: .14s; animation-delay: 1.06s; }
+}
+.aman-opening .picture {
+  translate: 0 var(--box-scroll-drop, 0px);
 }
 </style></head>
  <body>
@@ -1376,44 +1378,24 @@ finishedPhoto.alt = '';
 finishedPhoto.setAttribute('aria-hidden', 'true');
 originalPhoto.parentElement.append(finishedPhoto);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-const compactIntro = matchMedia('(max-width:760px)');
-const introAnimationNames = new Set(['lift', 'appear', 'arrive']);
 let scrollFrame = 0;
 
 function syncIntroWithScroll() {
   scrollFrame = 0;
   if (reducedMotion.matches) {
-    introStage.style.removeProperty('--mobile-box-outro');
-    introStage.style.removeProperty('--mobile-logo-shift');
-    introStage.style.removeProperty('--mobile-logo-scale');
-    introStage.style.removeProperty('--mobile-tagline-opacity');
+    introStage.style.removeProperty('--box-scroll-drop');
     return;
   }
-  const scrollDistance = Math.max(0, window.scrollY);
-  const holdDistance = compactIntro.matches ? 24 : 64;
-  const reverseScroll = Math.max(0, scrollDistance - holdDistance);
-
-  if (compactIntro.matches) {
-    const progress = Math.min(1, reverseScroll / Math.max(1, introStage.clientHeight - holdDistance));
-    // Lower the artwork as a single layer while the section scrolls away.
-    const drop = introStage.clientHeight * .42 * progress ** 2;
-    introStage.style.setProperty('--mobile-box-outro', `${drop}px`);
-    introStage.style.setProperty('--mobile-logo-shift', `-${progress * 14}px`);
-    introStage.style.setProperty('--mobile-logo-scale', String(1 - progress * .15));
-    introStage.style.setProperty('--mobile-tagline-opacity', String(1 - progress * .5));
-    return;
-  }
-
-  const reverseDistance = Math.min(440, introStage.clientHeight * 0.6);
-  const progress = 1 - Math.min(reverseScroll / Math.max(1, reverseDistance - holdDistance), 1);
-  const animations = introStage.getAnimations({subtree: true})
-    .filter(animation => introAnimationNames.has(animation.animationName));
-  const duration = Math.max(0, ...animations.map(animation => animation.effect.getComputedTiming().endTime));
-
-  for (const animation of animations) {
-    animation.pause();
-    animation.currentTime = progress * duration;
-  }
+  const height = Math.max(1, introStage.clientHeight);
+  const picture = originalPhoto.parentElement;
+  const tagline = picture.querySelector('.aman-tagline');
+  const restingTaglineBottom = picture.offsetTop - picture.offsetHeight + tagline.offsetTop + tagline.offsetHeight / 2;
+  const lowerMargin = Math.max(10, height * .045);
+  const targetDrop = Math.max(0, height - restingTaglineBottom - lowerMargin);
+  const progress = Math.min(1, Math.max(0, (window.scrollY - height * .06) / (height * .42)));
+  const drop = targetDrop * progress * progress * (3 - 2 * progress);
+  // The picture contains the hands, box, logo, and tagline.
+  introStage.style.setProperty('--box-scroll-drop', `${drop}px`);
 }
 
 function queueIntroSync() {
